@@ -1,6 +1,7 @@
 import { createApp } from "vue";
 import { createPinia } from "pinia";
 
+import "@fortawesome/fontawesome-free/js/all";
 import "./assets/base.scss";
 
 import App from "./App.vue";
