@@ -1,8 +1,7 @@
 import { createApp } from "vue";
 import { createPinia } from "pinia";
 
-import "vfonts/Lato.css";
-import "vfonts/FiraCode.css";
+import "./assets/base.scss";
 
 import App from "./App.vue";
 import router from "./router";
