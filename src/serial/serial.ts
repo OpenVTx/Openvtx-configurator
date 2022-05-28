@@ -1,11 +1,12 @@
 import { Log } from "@/log";
 import { getWebSerial, type WebSerialPort } from "./webserial";
 import { AsyncQueue } from "./async";
+import { printUint8Array } from "./util";
 
 const WebSerial = getWebSerial();
 
 const SERIAL_FILTERS = [
-  { usbVendorId: 0x0483, usbProductId: 0x5740 }, // quicksilver
+  { usbVendorId: 0x0483, usbProductId: 0x5740 }, // stm32
 ];
 
 const SERIAL_BUFFER_SIZE = 8192;
@@ -21,34 +22,32 @@ export class Serial {
 
   private queue = new AsyncQueue();
 
-  private port?: WebSerialPort;
+  private port!: WebSerialPort;
 
   private writer?: WritableStreamDefaultWriter<Uint8Array>;
   private reader?: ReadableStreamDefaultReader<Uint8Array>;
 
-  private onErrorCallback?: (err: unknown) => void;
+  constructor(private onErrorCallback?: (err: unknown) => void) {}
 
-  public async connect(
-    config: SerialConfig,
-    errorCallback?: (err: unknown) => void
-  ): Promise<void> {
+  public async connect(config: SerialConfig): Promise<void> {
     try {
-      await this._connectPort(config, errorCallback);
+      if (!this.port) {
+        this.port = await WebSerial.requestPort({
+          filters: SERIAL_FILTERS,
+        });
+      } else {
+        await this.close();
+      }
+
+      await this._connectPort(config);
     } catch (err) {
       await this.close();
       throw err;
     }
   }
 
-  private async _connectPort(
-    config: SerialConfig,
-    errorCallback?: (err: unknown) => void
-  ) {
-    this.port = await WebSerial.requestPort({
-      filters: SERIAL_FILTERS,
-    });
+  private async _connectPort(config: SerialConfig) {
     this.queue = new AsyncQueue();
-    this.onErrorCallback = errorCallback;
 
     await this.port.open({
       ...config,
@@ -69,7 +68,7 @@ export class Serial {
 
     if (this.reader) {
       try {
-        this.reader.cancel();
+        await this.reader.cancel();
         await this.reader.releaseLock();
       } catch (err) {
         Log.warn("serial", err);
@@ -78,6 +77,7 @@ export class Serial {
 
     if (this.writer) {
       try {
+        await this.writer.close();
         await this.writer.releaseLock();
       } catch (err) {
         Log.warn("serial", err);
@@ -92,15 +92,21 @@ export class Serial {
 
     this.reader = undefined;
     this.writer = undefined;
+  }
 
-    this.port = undefined;
-    this.onErrorCallback = undefined;
+  public flush() {
+    this.queue.reset();
   }
 
   public async write(array: Uint8Array) {
     if (this.writer) {
+      Log.trace("serial", "write", printUint8Array(array));
       await this.writer.write(array);
     }
+  }
+
+  public readByte(): Promise<number> {
+    return this.queue.pop();
   }
 
   public read(size: number): Promise<number[]> {
@@ -114,11 +120,11 @@ export class Serial {
           throw new Error("serial reader is null");
         }
         const { value, done } = await this.reader.read();
-        Log.trace("read", value, done);
         if (done) {
           break;
         }
         if (value.length) {
+          Log.trace("serial", "read", printUint8Array(value));
           this.queue.write(value);
         }
       } catch (e) {

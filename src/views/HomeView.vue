@@ -56,6 +56,8 @@
 
 <script lang="ts">
 import { Serial } from "@/serial/serial";
+import { useFlashStore } from "@/stores/flash";
+import { mapActions } from "pinia";
 import { defineComponent } from "vue";
 
 export default defineComponent({
@@ -66,11 +68,9 @@ export default defineComponent({
   },
 
   methods: {
+    ...mapActions(useFlashStore, ["connect"]),
     async flash() {
-      await this.serial.connect({
-        baudRate: 4800,
-        stopBits: 2,
-      });
+      await this.connect();
     },
   },
 });

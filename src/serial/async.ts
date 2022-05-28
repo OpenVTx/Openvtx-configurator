@@ -23,6 +23,13 @@ export class AsyncQueue {
     this._tail = 0;
   }
 
+  reset() {
+    while (this._resolvers.length) {
+      executeIfNotNull(this._resolvers.shift());
+    }
+    this.close();
+  }
+
   private _add() {
     this._promises.push(
       new Promise((resolve) => {
