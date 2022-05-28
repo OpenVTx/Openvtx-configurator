@@ -1,13 +1,13 @@
 <template>
-  <nav class="navbar is-light" role="navigation" aria-label="main navigation">
-    <div class="navbar-brand">
-      <a class="navbar-item" href="/">
-        <img src="@/assets/logo.png" height="48" />
-      </a>
-    </div>
+  <nav class="level">
+    <p class="level-item has-text-centered">
+      <img src="@/assets/logo.png" style="height: 48px" class="my-2" />
+    </p>
   </nav>
-  <div class="container mt-3">
-    <RouterView />
+  <div class="container mt-4">
+    <div class="content">
+      <RouterView />
+    </div>
   </div>
 </template>
 
