@@ -1,3 +1,5 @@
+import { useLogStore } from "./stores/log";
+
 export enum LogLevel {
   Trace,
   Debug,
@@ -47,7 +49,16 @@ export class Log {
     if (typeof data[0] == "string") {
       str += " " + data.shift();
     }
-    str += " ";
+
+    const store = useLogStore();
+    if (store) {
+      const line = this.format(str, data);
+      store.append({
+        level,
+        prefix,
+        line,
+      });
+    }
 
     switch (level) {
       case LogLevel.Trace:
@@ -64,5 +75,20 @@ export class Log {
       default:
         break;
     }
+  }
+
+  private static format(str: string, args: unknown[]): string {
+    for (const a of args) {
+      if (typeof a == "object") {
+        if (a instanceof Error) {
+          str += " Error: " + a.message;
+        } else {
+          str += " " + JSON.stringify(a);
+        }
+      } else {
+        str += " " + a;
+      }
+    }
+    return str;
   }
 }
