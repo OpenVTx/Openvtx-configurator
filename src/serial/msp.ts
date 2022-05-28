@@ -172,7 +172,7 @@ export class MSPPassthrough {
     return MSP_PASSTHROUGH_CONFIG[this.variant || MSPVariants.BETAFLIGHT];
   }
 
-  constructor(private msp: MSP) {}
+  private constructor(private msp: MSP) {}
 
   private async readSerialConfig() {
     const config = await this.msp.send(MSPCmd.MSP2_COMMON_SERIAL_CONFIG);
