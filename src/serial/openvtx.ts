@@ -1,6 +1,7 @@
 import type { Serial } from "@/serial/serial";
 
 export enum VTXType {
+  Unknown = "UNKNOWN",
   Tramp = "TRAMP",
   SmartAudio = "SA",
 }
@@ -9,32 +10,39 @@ const MAX_TRIES = 10;
 const RST_MAGIC = ["R".charCodeAt(0), "S".charCodeAt(0), "T".charCodeAt(0)];
 
 export class OpenVTX {
-  private constructor(private serial: Serial, private vtxType: VTXType) {}
+  private constructor(private serial: Serial) {}
 
-  public static async create(serial: Serial, vtxType: VTXType) {
-    const ovtx = new OpenVTX(serial, vtxType);
+  public static async resetToBootloader(serial: Serial, vtxType: VTXType) {
+    const ovtx = new OpenVTX(serial);
 
-    switch (vtxType) {
-      case VTXType.Tramp: {
-        await ovtx.serial.connect({
-          baudRate: 9600,
-        });
-        break;
+    const typesToTry =
+      vtxType == VTXType.Unknown
+        ? [VTXType.SmartAudio, VTXType.Tramp]
+        : [vtxType];
+
+    for (const t of typesToTry) {
+      switch (t) {
+        case VTXType.Tramp: {
+          await ovtx.serial.connect({
+            baudRate: 9600,
+          });
+          break;
+        }
+        case VTXType.SmartAudio: {
+          await ovtx.serial.connect({
+            baudRate: 4800,
+            stopBits: 2,
+          });
+          break;
+        }
       }
-      case VTXType.SmartAudio: {
-        await ovtx.serial.connect({
-          baudRate: 4800,
-          stopBits: 2,
-        });
-        break;
-      }
+
+      await ovtx.tryReset(t);
     }
-
-    return ovtx;
   }
 
-  public async resetToBootloader() {
-    const bootloaderSeq = this.bootloaderSeq();
+  private async tryReset(vtxType: VTXType) {
+    const bootloaderSeq = this.bootloaderSeq(vtxType);
 
     let tries = 0;
     while (tries <= MAX_TRIES) {
@@ -56,10 +64,10 @@ export class OpenVTX {
     }
   }
 
-  private bootloaderSeq() {
+  private bootloaderSeq(vtxType: VTXType) {
     let payload: Uint8Array;
 
-    switch (this.vtxType) {
+    switch (vtxType) {
       case VTXType.Tramp: {
         payload = new Uint8Array(16);
         payload[0] = 0x0f;
@@ -81,6 +89,8 @@ export class OpenVTX {
         ]);
         break;
       }
+      default:
+        throw new Error("invalid vtxType");
     }
 
     return payload;
