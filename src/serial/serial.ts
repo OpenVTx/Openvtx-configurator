@@ -27,18 +27,27 @@ export class Serial {
   private writer?: WritableStreamDefaultWriter<Uint8Array>;
   private reader?: ReadableStreamDefaultReader<Uint8Array>;
 
-  constructor(private onErrorCallback?: (err: unknown) => void) {}
+  private constructor(private onErrorCallback?: (err: unknown) => void) {}
+
+  public static async request(
+    onErrorCallback?: (err: unknown) => void
+  ): Promise<Serial | undefined> {
+    const serial = new Serial(onErrorCallback);
+    try {
+      serial.port = await WebSerial.requestPort({
+        filters: SERIAL_FILTERS,
+      });
+    } catch (err) {
+      serial.close();
+      Log.warn("serial", err);
+      return undefined;
+    }
+    return serial;
+  }
 
   public async connect(config: SerialConfig): Promise<void> {
     try {
-      if (!this.port) {
-        this.port = await WebSerial.requestPort({
-          filters: SERIAL_FILTERS,
-        });
-      } else {
-        await this.close();
-      }
-
+      await this.close();
       await this._connectPort(config);
     } catch (err) {
       await this.close();
@@ -137,5 +146,3 @@ export class Serial {
     }
   }
 }
-
-export const serial = new Serial();

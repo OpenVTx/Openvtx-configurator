@@ -1,3 +1,4 @@
+import { Log } from "@/log";
 import type { Serial } from "@/serial/serial";
 
 export enum VTXType {
@@ -20,7 +21,12 @@ export class OpenVTX {
         ? [VTXType.SmartAudio, VTXType.Tramp]
         : [vtxType];
 
+    let lastError: unknown = undefined;
     for (const t of typesToTry) {
+      if (vtxType == VTXType.Unknown) {
+        Log.info("openvtx", "trying vtxType", t);
+      }
+
       switch (t) {
         case VTXType.Tramp: {
           await ovtx.serial.connect({
@@ -37,7 +43,17 @@ export class OpenVTX {
         }
       }
 
-      await ovtx.tryReset(t);
+      try {
+        await ovtx.tryReset(t);
+        lastError = undefined;
+        break;
+      } catch (err) {
+        lastError = err;
+      }
+    }
+
+    if (lastError) {
+      throw lastError;
     }
   }
 
