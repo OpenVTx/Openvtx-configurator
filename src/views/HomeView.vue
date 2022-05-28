@@ -45,7 +45,9 @@
     <div class="field-body">
       <div class="field">
         <div class="control">
-          <button class="button is-medium is-primary">Flash</button>
+          <button class="button is-medium is-primary" v-on:click="flash()">
+            Flash
+          </button>
         </div>
       </div>
     </div>
@@ -53,7 +55,23 @@
 </template>
 
 <script lang="ts">
+import { Serial } from "@/serial/serial";
 import { defineComponent } from "vue";
 
-export default defineComponent({});
+export default defineComponent({
+  data() {
+    return {
+      serial: new Serial(),
+    };
+  },
+
+  methods: {
+    async flash() {
+      await this.serial.connect({
+        baudRate: 4800,
+        stopBits: 2,
+      });
+    },
+  },
+});
 </script>

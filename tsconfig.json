@@ -6,7 +6,11 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "types": ["naive-ui/volar"]
+    "types": [
+      "node",
+      "dom-serial",
+      "w3c-web-usb",
+    ]
   },
 
   "references": [
