@@ -1,3 +1,4 @@
+import { Log } from "@/log";
 import { ArrayReader, ArrayWriter } from "./util";
 import type { Serial } from "@/serial/serial";
 import semver from "semver";
@@ -7,8 +8,6 @@ export enum MSPCmd {
   MSP_API_VERSION = 1,
   MSP_FC_VARIANT = 2,
   MSP_FC_VERSION = 3,
-
-  MSP_CF_SERIAL_CONFIG = 54,
 
   MSP_SET_PASSTHROUGH = 245,
 
@@ -53,11 +52,10 @@ export const MSP_PASSTHROUGH_CONFIG: {
     },
   },
   [MSPVariants.QUICKSILVER]: {
-    minVersion: ">=todo",
+    minVersion: ">=0.1.0",
     functions: {
-      // TODO
-      [1 << 0]: VTXType.SmartAudio,
-      [1 << 1]: VTXType.Tramp,
+      [1 << 1]: VTXType.SmartAudio,
+      [1 << 2]: VTXType.Tramp,
     },
   },
 };
@@ -196,10 +194,12 @@ export class MSPPassthrough {
       // ident (uint8) + func (uint32)
       reader.advance(entrySize - 5);
 
-      if (this.config.functions[func]) {
+      const typ = this.config.functions[func];
+      if (typ) {
+        Log.debug("msp", "found", typ, "on port", ident);
         return {
           ident,
-          type: this.config.functions[func],
+          type: typ,
         };
       }
     }
@@ -212,6 +212,11 @@ export class MSPPassthrough {
     if (version.payload[1] < 1 || version.payload[2] < 42) {
       throw new Error("unsupported msp version");
     }
+    Log.debug(
+      "msp",
+      "api version",
+      version.payload[0] + "." + version.payload[1] + "." + version.payload[2]
+    );
 
     const fcVariant = await this.msp.send(MSPCmd.MSP_FC_VARIANT);
     const variantStr = String.fromCharCode(...fcVariant.payload);
@@ -219,12 +224,14 @@ export class MSPPassthrough {
       throw new Error("unsupported msp variant " + variantStr);
     }
     this.variant = <MSPVariants>variantStr;
+    Log.debug("msp", "fc variant", variantStr);
 
     const fcVersion = await this.msp.send(MSPCmd.MSP_FC_VERSION);
     const fcSemVer = fcVersion.payload.map((n) => "" + n).join(".");
     if (!semver.satisfies(fcSemVer, this.config.minVersion)) {
       throw new Error("unsupported msp version " + fcSemVer);
     }
+    Log.debug("msp", "fc version", fcSemVer);
 
     const port = await this.readSerialConfig();
     if (!port) {
