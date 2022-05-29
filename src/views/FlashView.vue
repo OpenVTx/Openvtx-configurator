@@ -56,7 +56,7 @@
 
   <div class="box">
     <h3>Log</h3>
-    <pre style="height: 30vh">{{ logLines.join("\n") }}</pre>
+    <pre style="height: 30vh" ref="log">{{ logLines.join("\n") }}</pre>
   </div>
 
   <div class="level">
@@ -84,6 +84,7 @@ import { VTXType } from "./../serial/openvtx";
 import { MSPPassthrough } from "./../serial/msp";
 import { Serial } from "@/serial/serial";
 import { OpenVTX } from "@/serial/openvtx";
+import { XModem } from "@/serial/xmodem";
 import { Log } from "@/log";
 
 function readFile(file: File): Promise<ArrayBuffer> {
@@ -98,13 +99,11 @@ function readFile(file: File): Promise<ArrayBuffer> {
 }
 
 async function flashFile(serial: Serial, firmware: Uint8Array) {
-  Log.debug("flash", firmware);
-
   Log.info("flash", "attempting msp passthrough");
   let vtxType = VTXType.Unknown;
   try {
     vtxType = await MSPPassthrough.enable(serial);
-    Log.info("flash", "deteted vtx type", vtxType);
+    Log.info("flash", "detected vtx type", vtxType);
   } catch (err) {
     Log.warn("flash", "passthrough failed");
     Log.debug("flash", err);
@@ -112,7 +111,10 @@ async function flashFile(serial: Serial, firmware: Uint8Array) {
 
   Log.info("flash", "attempting to reboot into bootloader");
   await OpenVTX.resetToBootloader(serial, vtxType);
-  Log.info("flash", "deteted bootloader");
+  Log.info("flash", "detected bootloader");
+
+  Log.info("flash", "flashing", firmware.byteLength, "bytes");
+  await XModem.send(serial, firmware);
 }
 
 export default defineComponent({
@@ -130,6 +132,14 @@ export default defineComponent({
         return true;
       }
       return false;
+    },
+  },
+  watch: {
+    logLines(prev, next) {
+      if (prev.length != next.length) {
+        const el = this.$refs.log as HTMLPreElement;
+        el.scrollTop = el.scrollHeight;
+      }
     },
   },
   methods: {

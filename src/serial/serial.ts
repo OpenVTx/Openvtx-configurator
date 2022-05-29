@@ -47,7 +47,9 @@ export class Serial {
 
   public async connect(config: SerialConfig): Promise<void> {
     try {
-      await this.close();
+      if (this.shouldRun) {
+        await this.close();
+      }
       await this._connectPort(config);
     } catch (err) {
       await this.close();
@@ -120,6 +122,16 @@ export class Serial {
 
   public read(size: number): Promise<number[]> {
     return this.queue.read(size);
+  }
+
+  public async readMirror(data: Uint8Array) {
+    for (let i = 0; i < data.byteLength; i++) {
+      const response = await this.readByte();
+      if (response != data[i]) {
+        return response;
+      }
+    }
+    return await this.readByte();
   }
 
   private async startReading() {
