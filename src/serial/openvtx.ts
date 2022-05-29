@@ -1,5 +1,6 @@
 import { Log } from "@/log";
 import type { Serial } from "@/serial/serial";
+import { sleepAsync } from "./util";
 
 export enum VTXType {
   Unknown = "UNKNOWN",
@@ -49,6 +50,10 @@ export class OpenVTX {
         break;
       } catch (err) {
         lastError = err;
+
+        if (vtxType == VTXType.Unknown) {
+          await sleepAsync(500);
+        }
       }
     }
 
@@ -66,11 +71,11 @@ export class OpenVTX {
         throw new Error("unable to communicate with bootloader");
       }
 
-      await new Promise((r) => setTimeout(r, 150));
+      await sleepAsync(20);
       await this.serial.write(bootloaderSeq);
-      await new Promise((r) => setTimeout(r, 50));
-      await this.serial.flush();
+      await this.serial.readMirror(bootloaderSeq);
 
+      await sleepAsync(10);
       const seq = String.fromCharCode(...(await this.serial.read(3)));
       if (seq == "CCC") {
         break;

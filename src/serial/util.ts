@@ -12,6 +12,10 @@ export function printUint8Array(buf?: Uint8Array): string | undefined {
   return undefined;
 }
 
+export function sleepAsync(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 export class ArrayWriter {
   private offset = 0;
   private buf = new ArrayBuffer(4);
