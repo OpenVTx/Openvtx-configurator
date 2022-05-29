@@ -10,7 +10,7 @@
           <div class="field">
             <div class="control">
               <div class="select is-medium">
-                <select v-model="mode">
+                <select v-model="mode" :disabled="flashInProgress">
                   <option v-for="o in modeOptions" :key="o">{{ o }}</option>
                 </select>
               </div>
@@ -35,6 +35,7 @@
                   type="file"
                   v-on:change="updateFile()"
                   ref="file"
+                  :disabled="flashInProgress"
                 />
                 <span class="file-cta">
                   <span class="file-icon">
@@ -60,7 +61,20 @@
   </div>
 
   <div class="level">
-    <div class="level-left"></div>
+    <div class="level-left">
+      <div class="level-item">
+        <div style="width: 50vw">
+          <progress
+            v-if="progress"
+            class="progress is-primary is-medium"
+            :value="progress"
+            max="100"
+          >
+            {{ progress }}%
+          </progress>
+        </div>
+      </div>
+    </div>
 
     <div class="level-right">
       <div class="level-item">
@@ -98,7 +112,11 @@ function readFile(file: File): Promise<ArrayBuffer> {
   });
 }
 
-async function flashFile(serial: Serial, firmware: Uint8Array) {
+async function flashFile(
+  serial: Serial,
+  firmware: Uint8Array,
+  progressCallback: (p: number) => void
+) {
   Log.info("flash", "attempting msp passthrough");
   let vtxType = VTXType.Unknown;
   try {
@@ -114,7 +132,9 @@ async function flashFile(serial: Serial, firmware: Uint8Array) {
   Log.info("flash", "detected bootloader");
 
   Log.info("flash", "flashing", firmware.byteLength, "bytes");
-  await XModem.send(serial, firmware);
+  await XModem.send(serial, firmware, progressCallback);
+
+  Log.info("flash", "success");
 }
 
 export default defineComponent({
@@ -123,11 +143,16 @@ export default defineComponent({
       mode: "Local",
       modeOptions: ["Release", "Local"],
       firmwareFile: undefined as File | undefined,
+      flashInProgress: false,
+      progress: undefined as number | undefined,
     };
   },
   computed: {
     ...mapState(useLogStore, ["logLines"]),
     canFlash() {
+      if (this.flashInProgress) {
+        return false;
+      }
       if (this.mode == "Local" && this.firmwareFile) {
         return true;
       }
@@ -164,11 +189,21 @@ export default defineComponent({
         return;
       }
 
+      this.progress = 0;
+      this.flashInProgress = true;
       try {
         const file = await readFile(this.firmwareFile);
-        await flashFile(serial, new Uint8Array(file));
+
+        await flashFile(
+          serial,
+          new Uint8Array(file),
+          (i: number) => (this.progress = i * 100)
+        );
+
+        this.progress = 100;
       } finally {
         serial.close();
+        this.flashInProgress = false;
       }
     },
   },

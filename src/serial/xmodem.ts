@@ -51,10 +51,17 @@ export class XModem {
   private padChar = 0x1a;
   private packetSize = 128;
 
-  private constructor(private serial: Serial) {}
+  private constructor(
+    private serial: Serial,
+    private progressCallback: (p: number) => void
+  ) {}
 
-  public static async send(serial: Serial, firmware: Uint8Array) {
-    const xmodem = new XModem(serial);
+  public static async send(
+    serial: Serial,
+    firmware: Uint8Array,
+    progressCallback: (p: number) => void
+  ) {
+    const xmodem = new XModem(serial, progressCallback);
 
     await xmodem.sync();
     if (xmodem.crcMode != 1) {
@@ -89,6 +96,8 @@ export class XModem {
 
         tries++;
       }
+
+      this.progressCallback(i / transferCount);
     }
 
     const eot = Uint8Array.from([XModemCmd.EOT]);
