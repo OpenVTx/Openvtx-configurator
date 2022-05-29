@@ -80,8 +80,8 @@ export class MSP {
   public async send(cmd: MSPCmd, ...args: number[]): Promise<MSPPacket> {
     const packet = this.buildPacket(cmd, args);
 
-    this.serial.write(packet);
-    this.serial.flush();
+    await this.serial.write(packet);
+    await this.serial.flush();
 
     const magic = await this.serial.read(2);
     if (magic[0] != MSP_MAGIC[0] || magic[1] != MSP_MAGIC[1]) {
