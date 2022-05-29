@@ -24,7 +24,7 @@ export const useLogStore = defineStore({
     append(entry: LogEntry) {
       this.logEntries = [...this.logEntries, entry];
     },
-    clear() {
+    clearLog() {
       this.logEntries = [];
     },
   },

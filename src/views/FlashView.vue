@@ -92,7 +92,7 @@
 
 <script lang="ts">
 import { useLogStore } from "@/stores/log";
-import { mapState } from "pinia";
+import { mapActions, mapState } from "pinia";
 import { defineComponent } from "vue";
 import { VTXType } from "./../serial/openvtx";
 import { MSPPassthrough } from "./../serial/msp";
@@ -145,6 +145,7 @@ export default defineComponent({
       firmwareFile: undefined as File | undefined,
       flashInProgress: false,
       progress: undefined as number | undefined,
+      scrollTimeout: undefined as number | undefined,
     };
   },
   computed: {
@@ -163,11 +164,17 @@ export default defineComponent({
     logLines(prev, next) {
       if (prev.length != next.length) {
         const el = this.$refs.log as HTMLPreElement;
-        el.scrollTop = el.scrollHeight;
+
+        window.clearTimeout(this.scrollTimeout);
+        this.scrollTimeout = window.setTimeout(
+          () => (el.scrollTop = el.scrollHeight),
+          1
+        );
       }
     },
   },
   methods: {
+    ...mapActions(useLogStore, ["clearLog"]),
     onSerialError(err: unknown) {
       Log.error("serial", err);
     },
@@ -189,6 +196,7 @@ export default defineComponent({
         return;
       }
 
+      this.clearLog();
       this.progress = 0;
       this.flashInProgress = true;
       try {
