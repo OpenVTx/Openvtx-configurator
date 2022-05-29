@@ -18,7 +18,7 @@ export interface SerialConfig {
 }
 
 export class Serial {
-  private shouldRun = true;
+  private shouldRun = false;
 
   private queue = new AsyncQueue();
 
