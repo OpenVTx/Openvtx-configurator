@@ -87,7 +87,7 @@ export class XModem {
 
         Log.debug(
           "xmodem",
-          `sending block ${i + 1}/${transferCount + 1} try ${tries}`
+          `sending block ${i + 1}/${transferCount} try ${tries}`
         );
         const packet = this.makePacket((i + 1) % 0x100, payload);
         await this.serial.write(packet);
