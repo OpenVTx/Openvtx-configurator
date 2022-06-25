@@ -127,9 +127,14 @@ async function flashFile(
     Log.debug("flash", err);
   }
 
-  Log.info("flash", "attempting to reboot into bootloader");
-  await OpenVTX.resetToBootloader(serial, vtxType);
-  Log.info("flash", "detected bootloader");
+  try {
+    Log.info("flash", "attempting to reboot into bootloader");
+    await OpenVTX.resetToBootloader(serial, vtxType);
+    Log.info("flash", "detected bootloader");
+  } catch (err) {
+    Log.warn("flash", err);
+    return;
+  }
 
   Log.info("flash", "flashing", firmware.byteLength, "bytes");
   await XModem.send(serial, firmware, progressCallback);
