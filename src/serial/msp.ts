@@ -196,7 +196,7 @@ export class MSPPassthrough {
 
       const typ = this.config.functions[func];
       if (typ) {
-        Log.debug("msp", "found", typ, "on port", ident);
+        Log.debug("msp", "found", typ, "on port", ident + 1);
         return {
           ident,
           type: typ,

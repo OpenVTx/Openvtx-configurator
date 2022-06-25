@@ -85,7 +85,10 @@ export class XModem {
           throw new Error("received invalid response");
         }
 
-        Log.debug("xmodem", "sending block", i + 1, "try", tries);
+        Log.debug(
+          "xmodem",
+          `sending block ${i + 1}/${transferCount + 1} try ${tries}`
+        );
         const packet = this.makePacket((i + 1) % 0x100, payload);
         await this.serial.write(packet);
 
