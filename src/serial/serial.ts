@@ -120,8 +120,8 @@ export class Serial {
     return this.queue.pop();
   }
 
-  public read(size: number): Promise<number[]> {
-    return this.queue.read(size);
+  public read(size: number, timeout?: number): Promise<number[]> {
+    return this.queue.read(size, timeout);
   }
 
   public async readMirror(data: Uint8Array) {

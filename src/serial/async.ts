@@ -52,7 +52,7 @@ export class AsyncQueue {
     }
   }
 
-  pop(): Promise<number> {
+  pop(timeout?: number): Promise<number> {
     return Promise.resolve().then(() => {
       if (this._head != this._tail) {
         this._tail = (this._tail + 1) % QUEUE_BUFFER_SIZE;
@@ -62,9 +62,18 @@ export class AsyncQueue {
         this._add();
       }
 
-      return (this._promises.shift() || Promise.resolve()).then(() =>
-        this.pop()
-      );
+      let promise: Promise<unknown> =
+        this._promises.shift() || Promise.resolve();
+      if (timeout != undefined) {
+        promise = Promise.race([
+          promise,
+          new Promise((resolve, reject) =>
+            setTimeout(() => reject("timeout"), timeout)
+          ),
+        ]);
+      }
+
+      return promise.then(() => this.pop());
     });
   }
 
@@ -74,10 +83,10 @@ export class AsyncQueue {
     }
   }
 
-  async read(size: number): Promise<number[]> {
+  async read(size: number, timeout?: number): Promise<number[]> {
     const buffer: number[] = [];
     for (let i = 0; i < size; i++) {
-      buffer.push(await this.pop());
+      buffer.push(await this.pop(timeout));
     }
     return buffer;
   }

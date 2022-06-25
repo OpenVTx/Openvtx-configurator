@@ -69,11 +69,6 @@ export class OpenVTX {
     while (tries <= MAX_TRIES) {
       await this.serial.flush();
 
-      const seq = await this.serial.read(3);
-      if (String.fromCharCode(...seq) == "CCC") {
-        break;
-      }
-
       if (tries == MAX_TRIES) {
         throw new Error("unable to communicate with bootloader");
       }
@@ -83,6 +78,17 @@ export class OpenVTX {
       await this.serial.readMirror(bootloaderSeq);
 
       await sleepAsync(10);
+
+      try {
+        const seq = await this.serial.read(3, 500);
+        if (String.fromCharCode(...seq) == "CCC") {
+          break;
+        }
+      } catch (e) {
+        if (e != "timeout") {
+          throw e;
+        }
+      }
 
       tries++;
     }
