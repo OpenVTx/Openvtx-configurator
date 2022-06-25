@@ -1,7 +1,7 @@
 import { Log } from "@/log";
 import { ArrayReader, ArrayWriter } from "./util";
 import type { Serial } from "@/serial/serial";
-import semver from "semver";
+import semverSatisfies from "semver/functions/satisfies";
 import { VTXType } from "./openvtx";
 
 export enum MSPCmd {
@@ -228,7 +228,7 @@ export class MSPPassthrough {
 
     const fcVersion = await this.msp.send(MSPCmd.MSP_FC_VERSION);
     const fcSemVer = fcVersion.payload.map((n) => "" + n).join(".");
-    if (!semver.satisfies(fcSemVer, this.config.minVersion)) {
+    if (!semverSatisfies(fcSemVer, this.config.minVersion)) {
       throw new Error("unsupported fc version " + fcSemVer);
     }
     Log.debug("msp", "fc version", fcSemVer);
