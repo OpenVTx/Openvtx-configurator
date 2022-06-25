@@ -229,7 +229,7 @@ export class MSPPassthrough {
     const fcVersion = await this.msp.send(MSPCmd.MSP_FC_VERSION);
     const fcSemVer = fcVersion.payload.map((n) => "" + n).join(".");
     if (!semver.satisfies(fcSemVer, this.config.minVersion)) {
-      throw new Error("unsupported msp version " + fcSemVer);
+      throw new Error("unsupported fc version " + fcSemVer);
     }
     Log.debug("msp", "fc version", fcSemVer);
 
