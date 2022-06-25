@@ -80,7 +80,7 @@ export class OpenVTX {
       await sleepAsync(10);
 
       try {
-        const seq = await this.serial.read(3, 500);
+        const seq = await this.serial.read(3, 1000);
         if (String.fromCharCode(...seq) == "CCC") {
           break;
         }
