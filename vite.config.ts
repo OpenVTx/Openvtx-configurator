@@ -11,6 +11,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      "node-fetch": "isomorphic-fetch",
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },

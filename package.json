@@ -15,6 +15,8 @@
     "@headlessui/vue": "^1.6.2",
     "@heroicons/vue": "^1.0.6",
     "bulma": "^0.9.4",
+    "isomorphic-fetch": "^3.0.0",
+    "octokit": "^2.0.3",
     "pinia": "^2.0.13",
     "semver": "^7.3.7",
     "vue": "^3.2.33",

@@ -10,7 +10,7 @@
           <div class="field">
             <div class="control">
               <div class="select is-medium">
-                <select v-model="mode" :disabled="flashInProgress">
+                <select v-model="store.mode" :disabled="flashInProgress">
                   <option v-for="o in modeOptions" :key="o">{{ o }}</option>
                 </select>
               </div>
@@ -19,7 +19,7 @@
         </div>
       </div>
 
-      <div class="field is-horizontal" v-if="mode == 'Local'">
+      <div class="field is-horizontal" v-if="store.mode == 'Local'">
         <div class="field-label is-medium">
           <label class="label">File</label>
         </div>
@@ -51,6 +51,45 @@
           </div>
         </div>
       </div>
+
+      <template v-if="store.mode == 'Release'">
+        <div class="field is-horizontal">
+          <div class="field-label is-medium">
+            <label class="label">Version</label>
+          </div>
+          <div class="field-body">
+            <div class="field">
+              <div class="control">
+                <div class="select is-medium">
+                  <select v-model="store.version" :disabled="flashInProgress">
+                    <option v-for="o in versions" :key="o">{{ o }}</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="field is-horizontal">
+          <div class="field-label is-medium">
+            <label class="label">Target</label>
+          </div>
+          <div class="field-body">
+            <div class="field">
+              <div class="control">
+                <div class="select is-medium">
+                  <select v-model="store.target" :disabled="flashInProgress">
+                    <option v-for="a in assets" :key="a.Target">
+                      {{ a.Target }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+
       <!-- form fields end -->
     </div>
   </div>
@@ -100,6 +139,8 @@ import { Serial } from "@/serial/serial";
 import { OpenVTX } from "@/serial/openvtx";
 import { XModem } from "@/serial/xmodem";
 import { Log } from "@/log";
+import { FlashModes, useFlashStore } from "@/stores/flash";
+import { Github } from "@/stores/api/github";
 
 function readFile(file: File): Promise<ArrayBuffer> {
   return new Promise((resolve, reject) => {
@@ -143,10 +184,14 @@ async function flashFile(
 }
 
 export default defineComponent({
+  setup() {
+    const store = useFlashStore();
+    return {
+      store,
+    };
+  },
   data() {
     return {
-      mode: "Local",
-      modeOptions: ["Release", "Local"],
       firmwareFile: undefined as File | undefined,
       flashInProgress: false,
       progress: undefined as number | undefined,
@@ -155,11 +200,19 @@ export default defineComponent({
   },
   computed: {
     ...mapState(useLogStore, ["logLines"]),
+    ...mapState(useFlashStore, ["modeOptions", "versions", "assets"]),
     canFlash() {
       if (this.flashInProgress) {
         return false;
       }
-      if (this.mode == "Local" && this.firmwareFile) {
+      if (this.store.mode == FlashModes.Local && this.firmwareFile) {
+        return true;
+      }
+      if (
+        this.store.mode == FlashModes.Release &&
+        this.store.version.length &&
+        this.store.target.length
+      ) {
         return true;
       }
       return false;
@@ -180,6 +233,7 @@ export default defineComponent({
   },
   methods: {
     ...mapActions(useLogStore, ["clearLog"]),
+    ...mapActions(useFlashStore, ["fetchReleases"]),
     onSerialError(err: unknown) {
       Log.error("serial", err);
     },
@@ -191,8 +245,23 @@ export default defineComponent({
         this.firmwareFile = undefined;
       }
     },
+
+    async getFile() {
+      if (this.store.mode == FlashModes.Local && this.firmwareFile) {
+        return await readFile(this.firmwareFile);
+      }
+
+      const asset = this.assets.find((a) => a.Target == this.store.target);
+      if (!asset) {
+        return undefined;
+      }
+
+      return await Github.fetchAsset(asset).then((res) => res.arrayBuffer());
+    },
+
     async flash() {
-      if (!this.firmwareFile) {
+      const file = await this.getFile();
+      if (!file) {
         return;
       }
 
@@ -205,8 +274,6 @@ export default defineComponent({
       this.progress = 0;
       this.flashInProgress = true;
       try {
-        const file = await readFile(this.firmwareFile);
-
         await flashFile(
           serial,
           new Uint8Array(file),
@@ -219,6 +286,9 @@ export default defineComponent({
         this.flashInProgress = false;
       }
     },
+  },
+  created() {
+    this.fetchReleases();
   },
 });
 </script>
