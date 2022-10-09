@@ -41,6 +41,7 @@ export const MSP_PASSTHROUGH_CONFIG: {
     functions: {
       [1 << 11]: VTXType.SmartAudio,
       [1 << 13]: VTXType.Tramp,
+      [(1 << 17) + (1 << 0)]: VTXType.MSP, // FUNCTION_VTX_MSP + FUNCTION_MSP https://github.com/betaflight/betaflight/blob/master/docs/Serial.md#2-serial-port-function
     },
   },
   [MSPVariants.INAV]: {
