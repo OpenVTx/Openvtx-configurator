@@ -6,6 +6,7 @@ export enum VTXType {
   Unknown = "UNKNOWN",
   Tramp = "TRAMP",
   SmartAudio = "SA",
+  MSP = "MSP",
 }
 
 const MAX_TRIES = 10;
@@ -19,7 +20,7 @@ export class OpenVTX {
 
     const typesToTry =
       vtxType == VTXType.Unknown
-        ? [VTXType.SmartAudio, VTXType.Tramp]
+        ? [VTXType.SmartAudio, VTXType.Tramp, VTXType.MSP]
         : [vtxType];
 
     let lastError: unknown = undefined;
@@ -29,6 +30,7 @@ export class OpenVTX {
       }
 
       switch (t) {
+        case VTXType.MSP:
         case VTXType.Tramp: {
           await ovtx.serial.connect({
             baudRate: 9600,
@@ -117,6 +119,19 @@ export class OpenVTX {
           ...RST_MAGIC,
           0xc3,
         ]);
+        break;
+      }
+      case VTXType.MSP: {
+        payload = new Uint8Array(9);
+        payload[0] = "$".charCodeAt(0);
+        payload[1] = "X".charCodeAt(0);
+        payload[2] = "<".charCodeAt(0);
+        payload[3] = 0x00;
+        payload[4] = 68;
+        payload[5] = 0x00;
+        payload[6] = 0x00;
+        payload[7] = 0x00;
+        payload[8] = 0x06;
         break;
       }
       default:

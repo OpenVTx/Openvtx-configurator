@@ -41,6 +41,7 @@ export const MSP_PASSTHROUGH_CONFIG: {
     functions: {
       [1 << 11]: VTXType.SmartAudio,
       [1 << 13]: VTXType.Tramp,
+      [(1 << 17) + (1 << 0)]: VTXType.MSP, // FUNCTION_VTX_MSP + FUNCTION_MSP https://github.com/phobos-/betaflight/blob/4ca3b9428f759d6637f7982cba7722ff4135b496/docs/Serial.md
     },
   },
   [MSPVariants.INAV]: {
