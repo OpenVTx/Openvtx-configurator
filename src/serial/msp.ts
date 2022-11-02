@@ -33,6 +33,8 @@ interface MSPPassthroughConfig {
   functions: { [x: number]: VTXType };
 }
 
+const MSP_MIN_VERSION = ">=0.1.42";
+
 export const MSP_PASSTHROUGH_CONFIG: {
   [key in MSPVariants]: MSPPassthroughConfig;
 } = {
@@ -210,14 +212,12 @@ export class MSPPassthrough {
 
   private async enable() {
     const version = await this.msp.send(MSPCmd.MSP_API_VERSION);
-    if (version.payload[1] < 1 || version.payload[2] < 42) {
-      throw new Error("unsupported msp version");
+
+    const mspVersion = version.payload.map((n) => "" + n).join(".");
+    Log.debug("msp", "api version", mspVersion);
+    if (!semverSatisfies(mspVersion, MSP_MIN_VERSION)) {
+      throw new Error("unsupported msp version " + mspVersion);
     }
-    Log.debug(
-      "msp",
-      "api version",
-      version.payload[0] + "." + version.payload[1] + "." + version.payload[2]
-    );
 
     const fcVariant = await this.msp.send(MSPCmd.MSP_FC_VARIANT);
     const variantStr = String.fromCharCode(...fcVariant.payload);
