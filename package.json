@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
-    "build:gh-pages": "env DEPLOYMENT=gh-pages vue-tsc --noEmit && vite build --outDir docs",
+    "build:gh-pages-release": "env DEPLOYMENT=gh-pages-release vue-tsc --noEmit && vite build --outDir docs",
+    "build:gh-pages-nigthly": "env DEPLOYMENT=gh-pages-nigthly vue-tsc --noEmit && vite build --outDir docs",
     "preview": "vite preview --port 5050",
     "typecheck": "vue-tsc --noEmit",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",

@@ -1,0 +1,83 @@
+name: build
+on:
+  push:
+    tags:
+      - '*'
+    branches:
+      - 'master'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: setup node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node_modules
+
+      - name: install npm packages
+        run: npm install
+
+      - name: build gh-pages-nightly
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          npm run build:gh-pages-nigthly
+          echo 'openvtx.org' > docs/CNAME
+
+      - name: build gh-pages-release
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          npm run build:gh-pages-release
+          echo 'openvtx.org' > docs/CNAME
+
+      - name: upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: gh-pages
+          path: docs
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: checkout gh-pages
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git fetch
+          git checkout gh-pages
+
+      - name: fetch artifact nightly
+        uses: actions/download-artifact@v3
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        with:
+          name: gh-pages
+          path: nightly
+
+      - name: fetch artifact release
+        uses: actions/download-artifact@v3
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        with:
+          name: gh-pages
+
+      - name: update gh-pages
+        run: |
+          git add .
+          git commit -m "GitHub Pages $GITHUB_SHA" || exit 0
+          git remote set-url --push origin https://actions:$GITHUB_TOKEN@github.com/OpenVTx/Openvtx-configurator
+          git push -f
