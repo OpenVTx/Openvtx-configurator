@@ -7,6 +7,7 @@ const WebSerial = getWebSerial();
 
 const SERIAL_FILTERS = [
   { usbVendorId: 0x0483, usbProductId: 0x5740 }, // stm32
+  { usbVendorId: 0x2e3c, usbProductId: 0x5740 }, // at32
 ];
 
 const SERIAL_BUFFER_SIZE = 8192;
