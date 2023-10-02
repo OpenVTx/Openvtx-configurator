@@ -15,6 +15,38 @@ const RST_MAGIC = ["R".charCodeAt(0), "S".charCodeAt(0), "T".charCodeAt(0)];
 export class OpenVTX {
   private constructor(private serial: Serial) {}
 
+  public static async listenForBootloader(serial: Serial, useSmartAudio: Boolean) {
+
+    const ovtx = new OpenVTX(serial);
+
+    if (useSmartAudio){
+      await ovtx.serial.connect({
+        baudRate: 4800,
+        stopBits: 2,
+      });
+    }
+    
+    let tries = 0;
+    while (tries <= 3) {
+      if (tries == 3) {
+        throw new Error("");
+      }
+
+      try {
+        const seq = await ovtx.serial.read(3, 1000);
+        if (String.fromCharCode(...seq) == "CCC") {
+          break;
+        }
+      } catch (e) {
+        if (e != "timeout") {
+          throw e;
+        }
+      }
+
+      tries++;
+    }
+  }
+
   public static async resetToBootloader(serial: Serial, vtxType: VTXType) {
     const ovtx = new OpenVTX(serial);
 
