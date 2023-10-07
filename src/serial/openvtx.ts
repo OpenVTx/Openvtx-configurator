@@ -28,9 +28,14 @@ export class OpenVTX {
     
     let tries = 0;
     while (tries <= 3) {
+
+      await ovtx.serial.flush();
+
       if (tries == 3) {
         throw new Error("");
       }
+
+      Log.info("listening", "attempt #", tries + 1, "/ 3");
 
       try {
         const seq = await ovtx.serial.read(3, 1000);

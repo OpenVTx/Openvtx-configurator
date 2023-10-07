@@ -162,12 +162,12 @@ async function flashFile(
   let vtxType = VTXType.Unknown;
 
   try{
-    Log.info("listening", "Is the VTx already in bootloader mode? Checking with SmartAudio settings...");
+    Log.info("listening", "Is the VTx already in bootloader mode? Checking with SmartAudio settings.");
     await OpenVTX.listenForBootloader(serial, true);
     bootloaderActive = true;
-    Log.info("listening", "Yes.");
-  } catch (err) {
-    Log.debug("listening", "Nope.");
+    Log.info("listening", "Bootloader found.");
+    } catch (err) {
+    Log.debug("listening", "Bootloader not found.");
   }
   
   if (!bootloaderActive){
@@ -183,12 +183,12 @@ async function flashFile(
 
   if (!bootloaderActive){
     try{
-      Log.info("listening", "Is the VTx already in bootloader mode?...");
+      Log.info("listening", "Is the VTx already in bootloader mode? Checking with SmartAudio settings.");
       await OpenVTX.listenForBootloader(serial, false);
       bootloaderActive = true;
-    Log.info("listening", "Yes.");
-  } catch (err) {
-    Log.debug("listening", "Nope.");
+      Log.info("listening", "Bootloader found.");
+    } catch (err) {
+      Log.debug("listening", "Bootloader not found.");
     }
   }
 
