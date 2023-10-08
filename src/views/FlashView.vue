@@ -158,23 +158,49 @@ async function flashFile(
   firmware: Uint8Array,
   progressCallback: (p: number) => void
 ) {
-  Log.info("flash", "attempting msp passthrough");
+  let bootloaderActive = false;
   let vtxType = VTXType.Unknown;
-  try {
-    vtxType = await MSPPassthrough.enable(serial);
-    Log.info("flash", "detected vtx type", vtxType);
-  } catch (err) {
-    Log.warn("flash", "passthrough failed");
-    Log.debug("flash", err);
+
+  try{
+    Log.info("listening", "Is the VTx already in bootloader mode? Checking with SmartAudio settings.");
+    await OpenVTX.listenForBootloader(serial, true);
+    bootloaderActive = true;
+    Log.info("listening", "Bootloader found.");
+    } catch (err) {
+    Log.debug("listening", "Bootloader not found.");
+  }
+  
+  if (!bootloaderActive){
+    try {
+      Log.info("flash", "attempting msp passthrough");
+      vtxType = await MSPPassthrough.enable(serial);
+      Log.info("flash", "detected vtx type", vtxType);
+    } catch (err) {
+      Log.warn("flash", "passthrough failed");
+      Log.debug("flash", err);
+    }
   }
 
-  try {
-    Log.info("flash", "attempting to reboot into bootloader");
-    await OpenVTX.resetToBootloader(serial, vtxType);
-    Log.info("flash", "detected bootloader");
-  } catch (err) {
-    Log.warn("flash", err);
-    return;
+  if (!bootloaderActive){
+    try{
+      Log.info("listening", "Is the VTx already in bootloader mode? Checking with SmartAudio settings.");
+      await OpenVTX.listenForBootloader(serial, false);
+      bootloaderActive = true;
+      Log.info("listening", "Bootloader found.");
+    } catch (err) {
+      Log.debug("listening", "Bootloader not found.");
+    }
+  }
+
+  if (!bootloaderActive){
+    try {
+      Log.info("flash", "attempting to reboot into bootloader");
+      await OpenVTX.resetToBootloader(serial, vtxType);
+      Log.info("flash", "detected bootloader");
+    } catch (err) {
+      Log.warn("flash", err);
+      return;
+    }
   }
 
   Log.info("flash", "flashing", firmware.byteLength, "bytes");
